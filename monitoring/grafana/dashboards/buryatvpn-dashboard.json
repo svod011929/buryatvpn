@@ -1,0 +1,51 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "BuryatVPN Dashboard",
+    "tags": ["buryatvpn"],
+    "timezone": "browser",
+    "panels": [
+      {
+        "id": 1,
+        "title": "Active Users",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "buryatvpn_users_total",
+            "legendFormat": "Total Users"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 0}
+      },
+      {
+        "id": 2,
+        "title": "Active Subscriptions",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "buryatvpn_active_subscriptions",
+            "legendFormat": "Active Subscriptions"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 0}
+      },
+      {
+        "id": 3,
+        "title": "Revenue",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(buryatvpn_revenue_total[5m])",
+            "legendFormat": "Revenue Rate"
+          }
+        ],
+        "gridPos": {"h": 8, "w": 24, "x": 0, "y": 8}
+      }
+    ],
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    },
+    "refresh": "30s"
+  }
+}

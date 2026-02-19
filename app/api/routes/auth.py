@@ -3,7 +3,7 @@
 """
 
 from flask import Blueprint, request, jsonify
-from app.core.security import security_manager
+from app.core.security import security_manager, rate_limiter
 from app.services.user_service import UserService
 from config.settings import settings
 from config.logging import api_logger
@@ -24,6 +24,10 @@ async def login():
         email = data['email']
         password = data['password']
 
+        client_ip = request.headers.get("X-Forwarded-For", request.remote_addr)
+        if rate_limiter.is_blocked(client_ip):
+            return jsonify({'error': 'Too many attempts. Try later'}), 429
+
         # Проверка учетных данных
         if (email == settings.web.admin_email and 
             security_manager.verify_password(password, settings.web.admin_password_hash)):
@@ -36,6 +40,7 @@ async def login():
 
             access_token = security_manager.create_access_token(token_data)
 
+            rate_limiter.record_attempt(client_ip, success=True)
             api_logger.info(f"Admin login successful: {email}")
 
             return jsonify({
@@ -44,6 +49,7 @@ async def login():
                 'expires_in': settings.security.jwt_expire_hours * 3600
             })
         else:
+            rate_limiter.record_attempt(client_ip, success=False)
             api_logger.warning(f"Failed login attempt: {email}")
             return jsonify({'error': 'Invalid credentials'}), 401
 

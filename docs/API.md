@@ -1,10 +1,21 @@
-# BuryatVPN API Documentation
+# BuryatVPN API
 
-## Authentication
+Актуальная документация по REST API для админского контура.
 
-All admin API endpoints require JWT authentication.
+## Базовая информация
 
-### Login
+- Base URL: `http://<host>:<port>`
+- API prefix: `/api/v1`
+- Формат данных: `application/json`
+- Аутентификация: `Authorization: Bearer <JWT>`
+
+## Аутентификация
+
+### `POST /api/v1/auth/login`
+
+Вход администратора и получение access token.
+
+**Request**
 
 ```http
 POST /api/v1/auth/login
@@ -16,54 +27,117 @@ Content-Type: application/json
 }
 ```
 
-Response:
+**Response 200**
+
 ```json
 {
-  "access_token": "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...",
+  "access_token": "<jwt>",
   "token_type": "bearer",
   "expires_in": 86400
 }
 ```
 
-## Endpoints
+**Response 401**
 
-### Health Check
-
-```http
-GET /health
+```json
+{
+  "error": "Invalid credentials"
+}
 ```
 
-Returns system health status.
+**Response 429** (слишком много попыток)
 
-### Metrics
-
-```http
-GET /metrics
+```json
+{
+  "error": "Too many attempts. Try later"
+}
 ```
 
-Returns Prometheus metrics.
+---
 
-### Users
+### `POST /api/v1/auth/verify`
 
-#### Get Users List
+Проверка валидности JWT.
+
+**Request**
 
 ```http
-GET /api/v1/users
-Authorization: Bearer <token>
+POST /api/v1/auth/verify
+Authorization: Bearer <jwt>
+Content-Type: application/json
 ```
 
-#### Get User Profile
+**Response 200**
 
-```http
-GET /api/v1/users/{telegram_id}
-Authorization: Bearer <token>
+```json
+{
+  "valid": true,
+  "payload": {
+    "email": "admin@example.com",
+    "role": "admin",
+    "exp": 9999999999
+  }
+}
 ```
 
-#### Ban User
+## Пользователи
+
+### `GET /api/v1/users`
+
+Получение списка пользователей для админ-панели.
+
+**Query params**
+
+- `limit` (int, default `50`, max `200`)
+- `offset` (int, default `0`)
+- `search` (string, optional)
+- `active_only` (`true`/`false`, default `true`)
+
+**Request**
 
 ```http
-POST /api/v1/users/{telegram_id}/ban
-Authorization: Bearer <token>
+GET /api/v1/users?limit=50&offset=0&active_only=true
+Authorization: Bearer <jwt>
+```
+
+**Response 200**
+
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "telegram_id": 123456789,
+      "username": "testuser",
+      "first_name": "Test",
+      "last_name": "User",
+      "email": null,
+      "is_active": true,
+      "is_banned": false,
+      "trial_used": false,
+      "referral_code": "ABCD1234",
+      "referred_by": null,
+      "referral_count": 0,
+      "created_at": "2026-01-01T10:00:00",
+      "last_activity": "2026-01-05T13:00:00"
+    }
+  ],
+  "limit": 50,
+  "offset": 0
+}
+```
+
+---
+
+### `POST /api/v1/users/<telegram_id>/ban`
+
+Блокировка или разблокировка пользователя.
+
+**Request**
+
+```http
+POST /api/v1/users/123456789/ban
+Authorization: Bearer <jwt>
 Content-Type: application/json
 
 {
@@ -71,19 +145,94 @@ Content-Type: application/json
 }
 ```
 
-## Error Responses
-
-All endpoints return errors in the following format:
+**Response 200**
 
 ```json
 {
-  "error": "Error message",
-  "code": "ERROR_CODE"
+  "telegram_id": 123456789,
+  "banned": true,
+  "updated": true
 }
 ```
 
-## Rate Limiting
+## Админский контур
 
-- Default: 1000 requests per hour, 100 per minute
-- Admin endpoints: 500 requests per hour
-- Authentication: 10 requests per minute
+### `GET /api/v1/admin/dashboard`
+
+Сводная статистика по пользователям и БД.
+
+**Response 200**
+
+```json
+{
+  "users": {
+    "total": 150,
+    "active": 120,
+    "banned": 4,
+    "new_last_30_days": 20
+  },
+  "database": {
+    "type": "SQLite",
+    "version": "3.44.0",
+    "url": "data/database.db",
+    "tables": {
+      "users": 150,
+      "subscriptions": 80,
+      "payments": 40
+    }
+  }
+}
+```
+
+---
+
+### `POST /api/v1/admin/backup`
+
+Создание резервной копии SQLite БД.
+
+**Request**
+
+```http
+POST /api/v1/admin/backup
+Authorization: Bearer <jwt>
+Content-Type: application/json
+
+{
+  "path": "backups/manual_backup.db"
+}
+```
+
+`path` можно не передавать — будет создан файл с timestamp.
+
+**Response 200**
+
+```json
+{
+  "status": "ok",
+  "backup_path": "backups/database_backup_20260219_120000.db"
+}
+```
+
+## Системные endpoints
+
+- `GET /health` — проверка состояния сервиса.
+- `GET /metrics` — Prometheus-метрики.
+
+## Формат ошибок
+
+Общий формат ошибки:
+
+```json
+{
+  "error": "Error message"
+}
+```
+
+Некоторые исключения могут возвращать расширенный формат:
+
+```json
+{
+  "error": "Validation failed",
+  "code": "VALIDATION_ERROR"
+}
+```

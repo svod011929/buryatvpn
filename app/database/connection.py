@@ -28,14 +28,29 @@ async def init_database():
     global engine, SessionLocal
 
     try:
+        # Нормализация URL для async SQLAlchemy.
+        # В проекте может быть задан синхронный URL sqlite:///...,
+        # но create_async_engine требует sqlite+aiosqlite:///...
+        database_url = settings.database.url
+        if database_url.startswith("sqlite:///") and not database_url.startswith("sqlite+aiosqlite:///"):
+            database_url = database_url.replace("sqlite:///", "sqlite+aiosqlite:///", 1)
+
+        engine_kwargs = {
+            "echo": settings.database.echo,
+            "pool_pre_ping": True,
+            "pool_recycle": 3600,
+        }
+
+        # Для SQLite не применяем pool_size/max_overflow —
+        # часть драйверов это не поддерживает.
+        if "sqlite" not in database_url:
+            engine_kwargs["pool_size"] = settings.database.pool_size
+            engine_kwargs["max_overflow"] = settings.database.max_overflow
+
         # Создание движка
         engine = create_async_engine(
-            settings.database.url,
-            echo=settings.database.echo,
-            pool_size=settings.database.pool_size,
-            max_overflow=settings.database.max_overflow,
-            pool_pre_ping=True,  # Проверка соединений
-            pool_recycle=3600,   # Пересоздание соединений каждый час
+            database_url,
+            **engine_kwargs,
         )
 
         # Создание фабрики сессий

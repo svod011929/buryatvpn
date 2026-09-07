@@ -16,9 +16,7 @@
   <text x="36" y="52" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="28" font-weight="700" fill="#E6EDF3">buryatvpn</text>
   <rect x="36" y="68" width="70" height="22" rx="6" fill="#38BDF8" fill-opacity="0.18" stroke="#38BDF8"/>
   <text x="48" y="84" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#38BDF8">VPN</text>
-  <text x="36" y="100" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#8B949E">- POST /auth/login — вход администратора. - POST /auth/verify —</text>
-<text x="36" y="122" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#8B949E">проверка JWT. - GET /users — список пользователей. - POST</text>
-<text x="36" y="144" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#8B949E">/users/&lt;telegram_id/ban — бан/разбан пользователя. - GET</text>
+  <text x="36" y="100" font-family="Segoe UI, Helvetica, Arial, sans-serif" font-size="16" fill="#8B949E">VPN и инфраструктура</text>
 
   <text x="36" y="172" font-family="ui-monospace, SFMono-Regular, Menlo, monospace" font-size="12" fill="#6E7681">by @svod011929 · KodoDrive</text>
 </svg>
